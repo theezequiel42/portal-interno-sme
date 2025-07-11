@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Recursos Financeiros - Fraiburgo</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .tab-button.active { background-color: #2563eb; color: white; font-weight: 600; }
+  </style>
+</head>
+
+<body class="bg-gray-100 text-gray-800">
+  <header class="bg-white shadow-sm">
+    <div class="container mx-auto px-6 py-4">
+      <h1 class="text-2xl md:text-3xl font-bold text-blue-700">Portal Gestão Educação</h1>
+      <p class="text-sm text-gray-600">Município de Fraiburgo</p>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-6 py-8">
+    <div class="text-center mb-8">
+      <h2 class="text-3xl md:text-4xl font-bold mb-2">Controle de Recursos Financeiros</h2>
+      <p class="max-w-3xl mx-auto text-gray-600">
+        Transparência na gestão dos recursos da educação. Selecione uma fonte para ver o detalhamento mensal.
+      </p>
+    </div>
+
+    <div class="mb-4 flex flex-wrap justify-center gap-2 items-center">
+      <label for="ano" class="text-sm font-medium">Ano:</label>
+      <select id="anoSelect" class="border px-2 py-1 rounded text-sm bg-white shadow-sm"></select>
+
+      <label class="ml-4 text-sm font-medium">Tipo de Gráfico:</label>
+      <select id="chartType" class="border px-2 py-1 rounded text-sm bg-white shadow-sm">
+        <option value="bar">Barras</option>
+        <option value="line">Linhas</option>
+      </select>
+    </div>
+
+    <div class="mb-8 flex flex-wrap justify-center gap-2">
+      <button data-resource="fundeb" class="tab-button px-4 py-2 rounded-md text-sm font-medium bg-white shadow-sm hover:bg-gray-200">FUNDEB</button>
+      <button data-resource="pnae" class="tab-button px-4 py-2 rounded-md text-sm font-medium bg-white shadow-sm hover:bg-gray-200">PNAE</button>
+      <button data-resource="pnate" class="tab-button px-4 py-2 rounded-md text-sm font-medium bg-white shadow-sm hover:bg-gray-200">PNATE</button>
+      <button data-resource="salario_educacao" class="tab-button px-4 py-2 rounded-md text-sm font-medium bg-white shadow-sm hover:bg-gray-200">Salário Educação</button>
+      <button data-resource="transporte_estado" class="tab-button px-4 py-2 rounded-md text-sm font-medium bg-white shadow-sm hover:bg-gray-200">Transporte (Estado)</button>
+      <button data-resource="emendas" class="tab-button px-4 py-2 rounded-md text-sm font-medium bg-white shadow-sm hover:bg-gray-200">Emendas</button>
+      <button data-resource="convenios" class="tab-button px-4 py-2 rounded-md text-sm font-medium bg-white shadow-sm hover:bg-gray-200">Convênios</button>
+      <button data-resource="outros" class="tab-button px-4 py-2 rounded-md text-sm font-medium bg-white shadow-sm hover:bg-gray-200">Outros</button>
+    </div>
+
+    <div id="resource-details-container" class="bg-white p-6 rounded-lg shadow-lg min-h-[500px]">
+      <!-- Conteúdo gerado dinamicamente -->
+    </div>
+  </main>
+
+  <footer class="bg-white mt-12 py-6 border-t">
+    <div class="container mx-auto text-center text-gray-500">
+      <p>&copy; 2025 Secretaria de Educação de Fraiburgo. Todos os direitos reservados.</p>
+    </div>
+  </footer>
+
+  <script>
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT2921iFWpHr4FmYn_rankqthcHW1-P4pBct1G6NN5ZwlgD5bEiOFqAuDViDDU19gj3S8UYTsq-iDNN/pub?output=csv";
+
+    async function fetchCSV() {
+      const res = await fetch(SHEET_CSV_URL);
+      const text = await res.text();
+      return text.trim().split("\n").slice(1).map(line => {
+        const [recurso, mes, ano, receitas, pagamentos] = line.split(",");
+        return [recurso.trim().toLowerCase(), mes.trim(), ano.trim(), Number(receitas), Number(pagamentos)];
+      });
+    }
+
+    function buildFinancialData(rows) {
+      const data = {};
+      const anos = new Set();
+
+      rows.forEach(([recurso, mes, ano, receitas, pagamentos]) => {
+        if (!recurso || !ano) return;
+        anos.add(ano);
+        if (!data[ano]) data[ano] = {};
+        if (!data[ano][recurso]) data[ano][recurso] = { name: recurso.toUpperCase(), monthlyData: [] };
+        data[ano][recurso].monthlyData.push({ month: mes, receitas, pagamentos });
+      });
+
+      return { dataByYear: data, anos: Array.from(anos).sort() };
+    }
+
+    function formatCurrency(v) {
+      return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    }
+
+    function animateCounter(el, target) {
+      let start = 0, step = 20, duration = 800;
+      const inc = target / (duration / step);
+      const intv = setInterval(() => {
+        start += inc;
+        if (start >= target) { start = target; clearInterval(intv); }
+        el.textContent = formatCurrency(start);
+      }, step);
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const container = document.getElementById("resource-details-container");
+      const yearSelect = document.getElementById("anoSelect");
+      const chartTypeSelect = document.getElementById("chartType");
+      let chartMain = null;
+      let chartPie = null;
+      let selectedResource = "fundeb";
+
+      const { dataByYear, anos } = buildFinancialData(await fetchCSV());
+      anos.forEach(ano => {
+        const opt = document.createElement("option");
+        opt.value = ano;
+        opt.textContent = ano;
+        yearSelect.appendChild(opt);
+      });
+      yearSelect.value = anos.at(-1);
+
+      function renderResource(ano, resourceKey) {
+        const yearData = dataByYear[ano];
+        if (!yearData || !yearData[resourceKey]) {
+          container.innerHTML = "<p class='text-red-500'>Dados não disponíveis.</p>";
+          return;
+        }
+
+        const resource = yearData[resourceKey];
+        let totalR = 0, totalP = 0, saldo = 0;
+        const labels = [], receitas = [], pagamentos = [], table = [];
+
+        resource.monthlyData.forEach(d => {
+          labels.push(d.month);
+          receitas.push(d.receitas);
+          pagamentos.push(d.pagamentos);
+          totalR += d.receitas;
+          totalP += d.pagamentos;
+          saldo += d.receitas - d.pagamentos;
+          table.push(`
+            <tr class="border-b">
+              <td class="py-2 px-4">${d.month}</td>
+              <td class="py-2 px-4 text-green-600">${formatCurrency(d.receitas)}</td>
+              <td class="py-2 px-4 text-red-600">${formatCurrency(d.pagamentos)}</td>
+              <td class="py-2 px-4 font-semibold ${saldo >= 0 ? 'text-gray-800' : 'text-red-700'}">${formatCurrency(saldo)}</td>
+            </tr>`);
+        });
+
+        container.innerHTML = `
+          <h3 class="text-2xl font-bold mb-6 text-center">${resource.name} - ${ano}</h3>
+          <div class="grid md:grid-cols-3 gap-4 mb-8 text-center">
+            <div class="bg-green-100 p-4 rounded-lg"><p class="text-sm text-green-800 font-semibold">Total de Receitas</p><p class="text-2xl font-bold text-green-700" id="receitasCounter">R$ 0,00</p></div>
+            <div class="bg-red-100 p-4 rounded-lg"><p class="text-sm text-red-800 font-semibold">Total de Pagamentos</p><p class="text-2xl font-bold text-red-700" id="pagamentosCounter">R$ 0,00</p></div>
+            <div class="bg-gray-200 p-4 rounded-lg"><p class="text-sm text-gray-800 font-semibold">Saldo Atual</p><p class="text-2xl font-bold text-gray-900" id="saldoCounter">R$ 0,00</p></div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div><canvas id="chartMain" height="120"></canvas></div>
+            <div class="flex justify-center">
+              <div class="w-full max-w-[320px] h-[320px]">
+                <canvas id="chartPie"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="font-bold text-lg mb-4">Tabela de Controle</h4>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="bg-gray-100"><tr>
+                  <th class="py-2 px-4">Mês</th><th class="py-2 px-4">Receitas</th><th class="py-2 px-4">Pagamentos</th><th class="py-2 px-4">Saldo Acumulado</th>
+                </tr></thead>
+                <tbody>${table.join("")}</tbody>
+              </table>
+            </div>
+          </div>`;
+
+        animateCounter(document.getElementById("receitasCounter"), totalR);
+        animateCounter(document.getElementById("pagamentosCounter"), totalP);
+        animateCounter(document.getElementById("saldoCounter"), totalR - totalP);
+
+        if (chartMain) chartMain.destroy();
+        if (chartPie) chartPie.destroy();
+
+        chartMain = new Chart(document.getElementById("chartMain"), {
+          type: chartTypeSelect.value,
+          data: {
+            labels,
+            datasets: [
+              { label: "Receitas", data: receitas, backgroundColor: "#2563eb", borderColor: "#2563eb", tension: 0.3 },
+              { label: "Pagamentos", data: pagamentos, backgroundColor: "#fb923c", borderColor: "#fb923c", tension: 0.3 }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: "top" },
+              tooltip: { callbacks: { label: ctx => formatCurrency(ctx.raw) } }
+            },
+            scales: {
+              y: { beginAtZero: true, ticks: { callback: v => formatCurrency(v) } }
+            }
+          }
+        });
+
+        chartPie = new Chart(document.getElementById("chartPie"), {
+          type: "pie",
+          data: {
+            labels,
+            datasets: [{
+              label: "Pagamentos",
+              data: pagamentos,
+              backgroundColor: labels.map((_, i) => `hsl(${(i * 40) % 360}, 70%, 60%)`)
+            }]
+          },
+          options: {
+            plugins: {
+              tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatCurrency(ctx.raw)}` } }
+            }
+          }
+        });
+      }
+
+      // Eventos
+      document.querySelectorAll(".tab-button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          selectedResource = btn.dataset.resource;
+          renderResource(yearSelect.value, selectedResource);
+        });
+      });
+
+      yearSelect.addEventListener("change", () => renderResource(yearSelect.value, selectedResource));
+      chartTypeSelect.addEventListener("change", () => renderResource(yearSelect.value, selectedResource));
+
+      document.querySelector(`.tab-button[data-resource="${selectedResource}"]`).click();
+    });
+  </script>
+</body>
+</html>
