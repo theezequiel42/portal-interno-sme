@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Interno SME - Fraiburgo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+  <!-- BOAS-VINDAS -->
+  <section class="bg-blue-50 py-10">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <h2 class="text-2xl sm:text-3xl font-bold text-blue-800 mb-4">Bem-vindo ao Portal de Gestão da Educação</h2>
+      <p class="text-slate-700 text-lg leading-relaxed">
+        Esta plataforma foi criada para apoiar o planejamento, a gestão e a tomada de decisões estratégicas da Secretaria de Educação de Fraiburgo.
+        Acompanhe indicadores em tempo real, acesse metas, recursos e análises integradas.
+      </p>
+    </div>
+  </section>
+
+  <!-- MÓDULOS -->
+  <section class="py-12">
+    <div class="max-w-7xl mx-auto px-6">
+      <h3 class="text-xl font-semibold mb-6 text-slate-800">Acesse os módulos:</h3>
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <a href="metas.html" class="card block bg-white p-6 rounded-xl shadow transition-transform">
+          <h4 class="text-lg font-bold text-sky-700 mb-2">📊 Metas Estratégicas</h4>
+          <p class="text-slate-600">Visualize o progresso das metas planejadas pela SME em tempo real.</p>
+        </a>
+        <a href="recursos.html" class="card block bg-white p-6 rounded-xl shadow transition-transform">
+          <h4 class="text-lg font-bold text-green-700 mb-2">💰 Recursos Financeiros</h4>
+          <p class="text-slate-600">Acompanhe receitas, pagamentos e saldo dos programas da educação.</p>
+        </a>
+        <a href="#" class="card block bg-white p-6 rounded-xl shadow transition-transform opacity-60 pointer-events-none">
+          <h4 class="text-lg font-bold text-violet-700 mb-2">📈 Indicadores Educacionais</h4>
+          <p class="text-slate-600">(Em breve) Desempenho escolar, frequência, avaliações externas e mais.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- DESTAQUES -->
+  <section class="bg-white py-12 border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-6 text-center">
+      <h3 class="text-xl font-semibold text-slate-800 mb-4">📌 Destaques</h3>
+      <p class="text-slate-600 mb-6">A SME de Fraiburgo tem avançado significativamente na gestão por resultados:</p>
+      <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-6 text-center text-lg font-medium">
+        <div class="bg-sky-100 p-4 rounded-lg">+90% das metas em andamento ou concluídas</div>
+        <div class="bg-green-100 p-4 rounded-lg">Transparência total dos recursos do FUNDEB</div>
+        <div class="bg-yellow-100 p-4 rounded-lg">Avaliações externas em expansão</div>
+        <div class="bg-pink-100 p-4 rounded-lg">Inclusão de dados de Educação Especial em breve</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RODAPÉ -->
+  <footer class="bg-slate-100 py-6 mt-10 border-t">
+    <div class="max-w-7xl mx-auto px-6 text-center text-sm text-slate-500">
+      &copy; 2025 Secretaria de Educação de Fraiburgo. Desenvolvido por Ezequiel Antunes de Lima.
+    </div>
+  </footer>
+</body>
+</html>
